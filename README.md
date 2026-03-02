@@ -18,8 +18,5 @@ Copied from `zkDSL.md`, in lean repo
 ### Documentation (`zkDSL.md`)
 
 - No `bool`?
-- Noticed that the `mode` parameter of poseidon is not used. 
-- Comment at the top makes the compiler fail
-- Haven't found anywhere how to access value at specific memory address using array access `address[0]` (add to debug section)
 - No ability to do `address[-1]`
 
