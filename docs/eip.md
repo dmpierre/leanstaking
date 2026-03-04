@@ -15,9 +15,7 @@ requires: EIP-7864
 
 "Lean Staking" is an L1 native, two-phase, staking process providing validator unlinkability. Lean staking can be made post-quantum secure provided the underlying proving system is. We provide an example LeanVM implementation. Implementing Lean Staking does not require any CL change and remains optional for validators.
 
-The current draft does not enforce a specific hash function or field, since both will be strongly tied to the chosen underlying proving system. 
-
-We provide an implementation using LeanVM. It uses Poseidon2 over the degree 5 of the Koala-Bear field. LeanVM is an ongoing Ethereum Foundation project to provide a formally verified, post-quantum ready proving system.
+The current draft does not enforce a specific hash function or field, since both will be strongly tied to the chosen underlying proving system. We provide an implementation using LeanVM. It uses Poseidon2 over the degree 5 of the Koala-Bear field. LeanVM is an ongoing Ethereum Foundation project to provide a formally verified, post-quantum ready proving system.
 
 ## Motivation
 
@@ -28,6 +26,8 @@ Breaking the link between execution layer (EL) and consensus layer (CL) credenti
 We propose "Lean Staking". It provides "validator unlinkability", i.e. the ability to uncouple validators consensus layer (CL) keys from their corresponding execution layer (EL) deposit address. With [EIP-6110](https://eips.ethereum.org/EIPS/eip-6110) the responsibility of deposit inclusion and validation has shifted to the execution layer, such that Lean Staking requires a minimal amount of changes only on the staking contract.
 
 ## Specification
+
+The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “NOT RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
 ### Pool Tree
 
