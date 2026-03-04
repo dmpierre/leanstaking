@@ -10,6 +10,7 @@ def main():
     nullifier = secret + 8
     commitment = compute_commitment(nullifier, secret)
     nullifier_hash = compute_nullifier_hash(nullifier)
+    # TODO: assert nullifier hash is correct
     leaf_sibling = nullifier + 8
     leaf_is_right_child = leaf_sibling + 8
     root = leaf_is_right_child + 10 * levels
