@@ -13,7 +13,7 @@ requires: EIP-7864
 
 ## Abstract
 
-"Lean Staking" is an L1 native, two-phase, staking process providing validator unlinkability and plausibly deniable transfers. Lean staking can be made post-quantum secure provided the underlying proving system is. We provide an example LeanVM implementation. Implementing Lean Staking does not require any CL change and remains optional for validators.
+"Lean Staking" is an L1 native, two-phase, staking process providing validator unlinkability. Lean staking can be made post-quantum secure provided the underlying proving system is. We provide an example LeanVM implementation. Implementing Lean Staking does not require any CL change and remains optional for validators.
 
 The current draft does not enforce a specific hash function or field, since both will be strongly tied to the chosen underlying proving system. 
 
