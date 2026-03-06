@@ -8,7 +8,7 @@ status:
 type:
 category:
 created:
-requires: EIP-7864
+requires: 
 ---
 
 ## Abstract
@@ -135,7 +135,7 @@ It is possible to not require depositing a specific ETH amount. However, non-uni
 
 ### Binary Trees
 
-Already in consideration with [EIP-7864](https://eips.ethereum.org/EIPS/eip-7864). Share work there. Probably use the same constants and re-use implementation effort (field, ). Storing tree roots prevents stakers from keeping track of all leaf updates which happened between the moment they pool and the moment the deposit. 
+Already in consideration with [EIP-7864](https://eips.ethereum.org/EIPS/eip-7864). Share work there? Probably use the same constants and re-use implementation effort (field, ). Storing tree roots prevents stakers from keeping track of all leaf updates which happened between the moment they pool and the moment the deposit. 
 
 ### No opt-out
 
