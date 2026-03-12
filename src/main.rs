@@ -17,8 +17,10 @@ pub struct MerkleProof {
 }
 
 pub struct StakeProof {
-    nullifier: [F; 8],
-    secret: [F; 8],
+    nullifier_preimage: [F; 8],
+    validator_key: [F; 13],
+    withdrawal_cred: [F; 9],
+    amount: F,
     pub merkle_proof: MerkleProof,
 }
 
@@ -40,8 +42,10 @@ impl Into<Vec<F>> for MerkleProof {
 impl Into<Vec<F>> for StakeProof {
     fn into(self) -> Vec<F> {
         let mut res = vec![];
-        res.extend_from_slice(&self.nullifier);
-        res.extend_from_slice(&self.secret);
+        res.extend_from_slice(&self.nullifier_preimage);
+        res.extend_from_slice(&self.validator_key);
+        res.extend_from_slice(&self.withdrawal_cred);
+        res.push(self.amount);
         let merkle_proof: Vec<F> = self.merkle_proof.into();
         res.extend_from_slice(&merkle_proof);
         res
@@ -53,8 +57,10 @@ fn main() {
     let lean_pg = &ProgramSource::Filepath(path);
     let merkle_proof = two_levels_merkle_proof();
     let stake_proof = StakeProof {
-        nullifier: [F::new(2); 8],
-        secret: [F::new(7); 8],
+        nullifier_preimage: [F::new(2); 8],
+        validator_key: [F::new(7); 13],
+        withdrawal_cred: [F::new(3); 9],
+        amount: F::new(32),
         merkle_proof,
     };
     let public_inputs: Vec<F> = stake_proof.into();
@@ -71,10 +77,18 @@ pub mod tests {
     pub fn test_commit() {
         let path = format!("{}/py/commit.py", env!("CARGO_MANIFEST_DIR"));
         let lean_pg = &ProgramSource::Filepath(path);
-        let nullifier = [F::new(23); 8];
-        let secret = [F::new(29); 8];
-        let a_b = [secret, nullifier].concat();
-        compile_and_run(lean_pg, (&a_b, &[]), false);
+        let nullifier_preimage = [F::new(23); 8];
+        let validator_key = [F::new(29); 13];
+        let withdrawal_cred = [F::new(31); 9];
+        let amount = [F::new(32)];
+        let inputs = [
+            nullifier_preimage.as_slice(),
+            validator_key.as_slice(),
+            withdrawal_cred.as_slice(),
+            amount.as_slice(),
+        ]
+        .concat();
+        compile_and_run(lean_pg, (&inputs, &[]), false);
     }
 
     #[test]
