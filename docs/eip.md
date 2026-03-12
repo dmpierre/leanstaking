@@ -73,13 +73,19 @@ We implement this using LeanVM, a VM coupled with a post-quantum proving system 
 ```python
 def compute_commitment(nullifier_preimage, validator_key, withdrawal_cred, amount):
     # nullifier_preimage (8) | validator_key (13) | withdrawal_cred (9) | amount (1)
-    # Total: 31 field elements → 3 poseidon16 calls
-    commitment = Array(8)
+    # Total: 31 field elements → 3 chained poseidon16 calls
     h1 = Array(8)
-    poseidon16(nullifier_preimage, validator_key_part1, h1)
+    poseidon16(nullifier_preimage, validator_key, h1)
     h2 = Array(8)
-    poseidon16(h1, validator_key_part2_and_wcred_part1, h2)
-    poseidon16(h2, wcred_part2_and_amount_padded, commitment)
+    poseidon16(h1, validator_key + 8, h2)
+    last_block = Array(8)
+    wc_tail = withdrawal_cred + 3
+    for i in unroll(0, 6):
+        last_block[i] = wc_tail[i]
+    last_block[6] = amount[0]
+    last_block[7] = 0
+    commitment = Array(8)
+    poseidon16(h2, last_block, commitment)
     return commitment
 
 def compute_nullifier(nullifier_preimage):
