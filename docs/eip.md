@@ -124,21 +124,36 @@ def verify_path(levels: Const, leaf, leaf_sibling, is_right_child, root):
         assert root[i] == final_node[i]
     return
 
+# program constants
+VALIDATOR_KEY_SIZE = 13
+WITHDRAWAL_KEY_SIZE = 9
+NULLIFIER_SIZE = 8
+ROOT_SIZE = 8
+NULLIFIER_PREIMAGE_SIZE = 8
+
 def main():
     levels = 128
-    nullifier_preimage = NONRESERVED_PROGRAM_INPUT_START
-    validator_key = nullifier_preimage + 8
-    withdrawal_cred = validator_key + 13
-    amount = withdrawal_cred + 9 
-    commitment = compute_commitment(nullifier_preimage, validator_key, withdrawal_cred, amount)
-    nullifier = compute_nullifier(nullifier_preimage)
-    
-    # TODO: assert nullifier, validator_key, withdrawal_cred, and amount match public inputs
 
-    leaf_sibling = amount + 1
+    # public inputs
+    validator_key = NONRESERVED_PROGRAM_INPUT_START
+    withdrawal_cred = validator_key + VALIDATOR_KEY_SIZE
+    amount = withdrawal_cred + WITHDRAWAL_KEY_SIZE
+    nullifier = amount + 1
+    root = nullifier + NULLIFIER_SIZE
+
+    # private inputs
+    nullifier_preimage = root + ROOT_SIZE
+    leaf_sibling = nullifier_preimage + NULLIFIER_PREIMAGE_SIZE
     leaf_is_right_child = leaf_sibling + 8
-    root = leaf_is_right_child + 10 * levels
+
+    commitment = compute_commitment(
+        nullifier_preimage, validator_key, withdrawal_cred, amount)
+    computed_nullifier = compute_nullifier(nullifier_preimage)
     verify_path(levels, commitment, leaf_sibling, leaf_is_right_child, root)
+
+    for i in range(0, NULLIFIER_SIZE):
+        assert nullifier[i] == computed_nullifier[i]
+
     return
 ```
 
