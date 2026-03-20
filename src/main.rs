@@ -20,6 +20,7 @@ pub struct StakeProof {
     nullifier_preimage: [F; 8],
     validator_key: [F; 13],
     withdrawal_cred: [F; 9],
+    nullifier: [F; 8],
     amount: F,
     pub merkle_proof: MerkleProof,
 }
@@ -34,7 +35,6 @@ impl Into<Vec<F>> for MerkleProof {
             res.extend_from_slice(node);
             res.push(flag);
         }
-        res.extend_from_slice(&self.root);
         res
     }
 }
@@ -42,10 +42,15 @@ impl Into<Vec<F>> for MerkleProof {
 impl Into<Vec<F>> for StakeProof {
     fn into(self) -> Vec<F> {
         let mut res = vec![];
-        res.extend_from_slice(&self.nullifier_preimage);
+        // public inputs
         res.extend_from_slice(&self.validator_key);
         res.extend_from_slice(&self.withdrawal_cred);
         res.push(self.amount);
+        res.extend_from_slice(&self.nullifier);
+        res.extend_from_slice(&self.merkle_proof.root);
+
+        // private inputs
+        res.extend_from_slice(&self.nullifier_preimage);
         let merkle_proof: Vec<F> = self.merkle_proof.into();
         res.extend_from_slice(&merkle_proof);
         res
@@ -56,12 +61,23 @@ fn main() {
     let path = format!("{}/py/stake.py", env!("CARGO_MANIFEST_DIR"));
     let lean_pg = &ProgramSource::Filepath(path);
     let merkle_proof = two_levels_merkle_proof();
+    let nullifier = [
+        F::new(1943526546),
+        F::new(660031786),
+        F::new(925555113),
+        F::new(1029853471),
+        F::new(791673069),
+        F::new(822174872),
+        F::new(578818453),
+        F::new(1335880560),
+    ];
     let stake_proof = StakeProof {
         nullifier_preimage: [F::new(2); 8],
         validator_key: [F::new(7); 13],
         withdrawal_cred: [F::new(3); 9],
         amount: F::new(32),
         merkle_proof,
+        nullifier,
     };
     let public_inputs: Vec<F> = stake_proof.into();
     compile_and_run(lean_pg, (&public_inputs, &[]), false);
