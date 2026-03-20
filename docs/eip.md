@@ -268,9 +268,9 @@ Lean Staking offers a plausibly deniable value transfer mechanism as a byproduct
 
 ### Plausible Deniability with Deposit-side Only
 
-With the deposit-side protocol alone, a depositor can set the receiver's address as the `withdrawal_credentials` during the claim phase. An observer sees a standard staking operation indistinguishable from any other validator deposit. The sender has clear plausible deniability — they can claim to be a legitimate validator.
+With the deposit-side protocol alone, a depositor can set the receiver's address as the `withdrawal_credentials` during the claim phase. An observer sees a standard staking operation indistinguishable from any other validator deposit. The sender has clear plausible deniability, since he can claim to be a legitimate validator.
 
-The recipient's situation is more nuanced. Unlike the Wormhole construction ([EIP-7503](https://eips.ethereum.org/EIPS/eip-7503)) where the recipient mints fresh ETH through a privacy-specific mechanism, here the recipient receives funds through a normal validator withdrawal — a non-privacy action that all validators use. In principle this gives the recipient some deniability: they can claim they were simply a validator who exited. However, since a privacy-seeking user is unlikely to actually run a validator for an extended period, they would enter the validator set and immediately request exit. This behavior is unusual — legitimate validators typically run for extended periods — and an attentive observer could flag short-lived validators as likely privacy transfers, weakening the recipient's deniability in practice.
+The recipient's situation is more nuanced. Unlike the Wormhole construction ([EIP-7503](https://eips.ethereum.org/EIPS/eip-7503)) where the recipient mints fresh ETH through a privacy-specific mechanism, here the recipient receives funds through a normal validator withdrawal, a public action that all validators use. In principle this gives the recipient some deniability: they can claim they were simply a validator who exited. However, since a privacy-seeking user is unlikely to actually run a validator for an extended period, they would enter the validator set and immediately request exit. This behavior is unusual: legitimate validators typically run for extended periods and an attentive observer could flag short-lived validators as likely privacy transfers, weakening the recipient's deniability in practice.
 
 ### Two-sided Plausible Deniability
 
@@ -279,7 +279,7 @@ With two-phase withdrawals, both sides of a private transfer are covered:
 - **Sender**: submits a pending deposit with a commitment. Indistinguishable from a legitimate validator making a deposit. Can plausibly claim to be staking.
 - **Recipient**: claims a pending withdrawal to their address. Indistinguishable from a validator who finished validating and is withdrawing their stake. Can plausibly claim to have been a validator.
 
-An observer sees a pending deposit on one end and a withdrawal claim on the other — both look like routine staking operations. There is no public link between them. Neither the sender nor the recipient needs to justify using a "privacy tool" because both are using the same mechanism that all legitimate validators use. With the direct pending-deposit-to-pending-withdrawal path, neither party ever activates as a validator.
+An observer sees a pending deposit on one end and a withdrawal claim on the other, with both looking like routine staking operations. There is no public link between them. Neither the sender nor the recipient needs to justify using a "privacy tool" because both are using the same mechanism that all legitimate validators use. With the direct pending-deposit-to-pending-withdrawal path, neither party ever activates as a validator.
 
 To our knowledge, this is the first construction offering two-sided plausible deniability for private transfers on Ethereum.
 
