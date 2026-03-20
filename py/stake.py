@@ -10,7 +10,8 @@ def main():
     validator_key = nullifier_preimage + 8
     withdrawal_cred = validator_key + 13
     amount = withdrawal_cred + 9
-    commitment = compute_commitment(nullifier_preimage, validator_key, withdrawal_cred, amount)
+    commitment = compute_commitment(
+        nullifier_preimage, validator_key, withdrawal_cred, amount)
     nullifier = compute_nullifier(nullifier_preimage)
     # TODO: assert nullifier, validator_key, withdrawal_cred, and amount match public inputs
     leaf_sibling = amount + 1

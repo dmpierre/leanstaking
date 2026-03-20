@@ -36,14 +36,14 @@ pub fn two_levels_merkle_proof() -> MerkleProof {
     };
     let proof = MerkleProof {
         root: [
-            F::new(918934911),
-            F::new(1615771358),
-            F::new(1781687901),
-            F::new(450006695),
-            F::new(716307122),
-            F::new(697919692),
-            F::new(1249286800),
-            F::new(1473571382),
+            F::new(1214873956),
+            F::new(258084305),
+            F::new(2002146002),
+            F::new(645480002),
+            F::new(499722232),
+            F::new(67463537),
+            F::new(272555026),
+            F::new(342163208),
         ],
         path: path,
     };
