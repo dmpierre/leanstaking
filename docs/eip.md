@@ -125,7 +125,7 @@ def verify_path(levels: Const, leaf, leaf_sibling, is_right_child, root):
     return
 
 def main():
-    levels = 1
+    levels = 128
     nullifier_preimage = NONRESERVED_PROGRAM_INPUT_START
     validator_key = nullifier_preimage + 8
     withdrawal_cred = validator_key + 13
