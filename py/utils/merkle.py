@@ -17,7 +17,7 @@ def verify_path(levels: Const, leaf, leaf_sibling, is_right_child, root):
     path = DynArray([])
     node = Array(8)
     l, r = dual_mux(leaf, leaf_sibling, is_right_child)
-    poseidon16(l, r, node)
+    poseidon16_compress(l, r, node)
 
     sibling = is_right_child + 1
     flag = sibling + 8
@@ -25,7 +25,7 @@ def verify_path(levels: Const, leaf, leaf_sibling, is_right_child, root):
     for _ in unroll(0, levels):
         l, r = dual_mux(node, sibling, flag)
         path_node = Array(8)
-        poseidon16(l, r, path_node)
+        poseidon16_compress(l, r, path_node)
         sibling = flag + 1
         flag = sibling + 8
         node = path_node
