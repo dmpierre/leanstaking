@@ -260,7 +260,7 @@ This introduces a tradeoff: more denominations provide flexibility but fragment 
 
 ## Post-quantum Security
 
-Lean Staking inherits its post-quantum security properties from the underlying proving system. LeanVM's combination of WHIR and Superspartan is designed to be post-quantum secure, though this depends on the hardness assumptions of the specific instantiation. The hash-based commitment scheme (Poseidon2) does not rely on discrete-log or factoring assumptions, contributing to post-quantum resilience.
+Lean Staking inherits its post-quantum security properties from the underlying proving system. LeanVM leverages Superspartan for its polynomial interactive oracle proof (PIOP). Combined with the hash-based WHIR polynomial commitment scheme (PCS), it removes any reliance on any elliptic-curve based primitive, thereby providing a post-quantum secure proving system. LeanVM is usually instantiated with Poseidon2.
 
 ## Plausibly Deniable Transfers
 
@@ -282,4 +282,3 @@ With two-phase withdrawals, both sides of a private transfer are covered:
 An observer sees a pending deposit on one end and a withdrawal claim on the other, with both looking like routine staking operations. There is no public link between them. Neither the sender nor the recipient needs to justify using a "privacy tool" because both are using the same mechanism that all legitimate validators use. With the direct pending-deposit-to-pending-withdrawal path, neither party ever activates as a validator.
 
 To our knowledge, this is the first construction offering two-sided plausible deniability for private transfers on Ethereum.
-
