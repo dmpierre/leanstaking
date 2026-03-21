@@ -10,26 +10,28 @@ def dual_mux(a, b, switch):
 
 
 def verify_path(levels: Const, leaf, leaf_sibling, is_right_child, root):
-    node = Array(8)
-    l, r = dual_mux(leaf, leaf_sibling, is_right_child)
-    poseidon16(l, r, node)  # type: ignore[reportCallIssue]
-
+    node: Mut
     sibling: Mut
     flag: Mut
-    sibling = is_right_child + 1
 
-    flag = sibling + 8
     path = DynArray([])
+    node = Array(8)
+    l, r = dual_mux(leaf, leaf_sibling, is_right_child)
+    poseidon16(l, r, node)
+
+    sibling = is_right_child + 1
+    flag = sibling + 8
 
     for _ in unroll(0, levels):
-        path_node = Array(8)
         l, r = dual_mux(node, sibling, flag)
-        poseidon16(l, r, path_node)  # type: ignore[reportCallIssue]
+        path_node = Array(8)
+        poseidon16(l, r, path_node)
         sibling = flag + 1
         flag = sibling + 8
-        path.push(path_node)
+        node = path_node
+        path.push(node)
 
-    final_node = path[0]
+    final_node = path[levels - 1]
     for i in unroll(0, 8):
         assert root[i] == final_node[i]
     return

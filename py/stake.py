@@ -12,7 +12,7 @@ NULLIFIER_PREIMAGE_SIZE = 8
 
 
 def main():
-    levels = 1
+    levels = 2
 
     # public inputs
     validator_key = NONRESERVED_PROGRAM_INPUT_START

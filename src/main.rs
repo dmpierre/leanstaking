@@ -4,6 +4,8 @@ use lean_vm::*;
 pub mod data;
 use data::two_levels_merkle_proof;
 
+use crate::data::three_levels_merkle_proof;
+
 pub struct MerklePath {
     pub leaf_sibling: [F; 8],
     pub auth_path: Vec<[F; 8]>,
@@ -60,7 +62,7 @@ impl Into<Vec<F>> for StakeProof {
 fn main() {
     let path = format!("{}/py/stake.py", env!("CARGO_MANIFEST_DIR"));
     let lean_pg = &ProgramSource::Filepath(path);
-    let merkle_proof = two_levels_merkle_proof();
+    let merkle_proof = three_levels_merkle_proof();
     let nullifier = [
         F::new(1943526546),
         F::new(660031786),
@@ -110,25 +112,16 @@ pub mod tests {
     #[test]
     pub fn test_hash() {
         let a = [
-            F::new(760229910),
-            F::new(1609661003),
-            F::new(814780643),
-            F::new(2041690851),
-            F::new(1904291566),
-            F::new(1778725946),
-            F::new(987198971),
-            F::new(1396432968),
+            F::new(1214873956),
+            F::new(258084305),
+            F::new(2002146002),
+            F::new(645480002),
+            F::new(499722232),
+            F::new(67463537),
+            F::new(272555026),
+            F::new(342163208),
         ];
-        let b = [
-            F::new(300284318),
-            F::new(184251726),
-            F::new(785324177),
-            F::new(1645200318),
-            F::new(218255519),
-            F::new(324974344),
-            F::new(38180562),
-            F::new(1122512566),
-        ];
+        let b = a.clone();
         let path = format!("{}/py/hash.py", env!("CARGO_MANIFEST_DIR"));
         let lean_pg = &ProgramSource::Filepath(path);
         let a_b = [a, b].concat();
