@@ -171,6 +171,7 @@ name = "lean-staking"
 version = "0.1.0"
 dependencies = [
  "lean_compiler",
+ "lean_prover",
  "lean_vm",
  "utils",
 ]
@@ -182,6 +183,25 @@ source = "git+https://github.com/leanEthereum/leanMultisig.git?rev=9972d3a6e628d
 dependencies = [
  "air",
  "backend",
+ "lean_vm",
+ "pest",
+ "pest_derive",
+ "rand",
+ "sub_protocols",
+ "tracing",
+ "utils",
+ "xmss",
+]
+
+[[package]]
+name = "lean_prover"
+version = "0.1.0"
+source = "git+https://github.com/leanEthereum/leanMultisig.git?rev=9972d3a6e628dce0a1b77f3047463ca0227589af#9972d3a6e628dce0a1b77f3047463ca0227589af"
+dependencies = [
+ "air",
+ "backend",
+ "itertools",
+ "lean_compiler",
  "lean_vm",
  "pest",
  "pest_derive",

@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 lean_compiler = { git = "https://github.com/leanEthereum/leanMultisig.git", rev = "9972d3a6e628dce0a1b77f3047463ca0227589af" }
+lean_prover = { git = "https://github.com/leanEthereum/leanMultisig.git", rev = "9972d3a6e628dce0a1b77f3047463ca0227589af" }
 lean_vm = { git = "https://github.com/leanEthereum/leanMultisig.git", rev = "9972d3a6e628dce0a1b77f3047463ca0227589af" }
 utils = { git = "https://github.com/leanEthereum/leanMultisig.git", rev = "9972d3a6e628dce0a1b77f3047463ca0227589af" }
 

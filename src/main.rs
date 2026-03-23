@@ -1,8 +1,12 @@
-use lean_compiler::*;
+use lean_compiler::ProgramSource;
+use lean_compiler::compile_and_run;
+use lean_compiler::try_compile_program;
+use lean_prover::default_whir_config;
+use lean_prover::prove_execution::prove_execution;
+use lean_prover::verify_execution::verify_execution;
 use lean_vm::*;
 
 pub mod data;
-
 use crate::data::three_levels_merkle_proof;
 
 pub struct MerklePath {
@@ -91,13 +95,40 @@ fn main() {
         merkle_proof,
         nullifier,
     };
-    let inputs: StakeProofInputs = stake_proof.into();
+    let stake_proof_inputs: StakeProofInputs = stake_proof.into();
 
+    let bytecode = try_compile_program(lean_pg).unwrap();
+    let witness = ExecutionWitness {
+        private_input: stake_proof_inputs.private_inputs.as_slice(),
+        ..ExecutionWitness::empty()
+    };
     compile_and_run(
         lean_pg,
-        (&inputs.public_inputs, &inputs.private_inputs),
+        (
+            &stake_proof_inputs.public_inputs,
+            &stake_proof_inputs.private_inputs,
+        ),
         false,
     );
+    let whir_config = default_whir_config(1);
+
+    let time = std::time::Instant::now();
+    let proof = prove_execution(
+        &bytecode,
+        &stake_proof_inputs.public_inputs,
+        &witness,
+        &whir_config,
+        false,
+    );
+    let proof_time = time.elapsed();
+
+    println!("Proof generation time: {:.3}s", proof_time.as_secs_f32());
+    println!("{}", proof.metadata.display());
+
+    let time = std::time::Instant::now();
+    verify_execution(&bytecode, &stake_proof_inputs.public_inputs, proof.proof).unwrap();
+    let verification_time = time.elapsed();
+    println!("Verification time: {:.3}s", verification_time.as_secs_f32());
 }
 
 #[cfg(test)]
