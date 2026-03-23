@@ -138,6 +138,10 @@ NULLIFIER_SIZE = 8
 ROOT_SIZE = 8
 NULLIFIER_PREIMAGE_SIZE = 8
 
+
+# located at (NONRESERVED_PROGRAM_INPUT_START + inputs.public_inputs.len()).next_power_of_two()
+NONRESERVED_PROGRAM_PRIVATE_INPUT_START = 128
+
 def main():
     levels = 128
 
@@ -149,7 +153,7 @@ def main():
     root = nullifier + NULLIFIER_SIZE
 
     # private inputs
-    nullifier_preimage = root + ROOT_SIZE
+    nullifier_preimage = NONRESERVED_PROGRAM_PRIVATE_INPUT_START 
     leaf_sibling = nullifier_preimage + NULLIFIER_PREIMAGE_SIZE
     leaf_is_right_child = leaf_sibling + 8
 
