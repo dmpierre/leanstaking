@@ -2,7 +2,6 @@ use lean_compiler::*;
 use lean_vm::*;
 
 pub mod data;
-use data::two_levels_merkle_proof;
 
 use crate::data::three_levels_merkle_proof;
 
@@ -41,21 +40,32 @@ impl Into<Vec<F>> for MerkleProof {
     }
 }
 
-impl Into<Vec<F>> for StakeProof {
-    fn into(self) -> Vec<F> {
-        let mut res = vec![];
+pub struct StakeProofInputs {
+    pub public_inputs: Vec<F>,
+    pub private_inputs: Vec<F>,
+}
+
+impl Into<StakeProofInputs> for StakeProof {
+    fn into(self) -> StakeProofInputs {
+        let mut public_inputs = vec![];
+        let mut private_inputs = vec![];
+
         // public inputs
-        res.extend_from_slice(&self.validator_key);
-        res.extend_from_slice(&self.withdrawal_cred);
-        res.push(self.amount);
-        res.extend_from_slice(&self.nullifier);
-        res.extend_from_slice(&self.merkle_proof.root);
+        public_inputs.extend_from_slice(&self.validator_key);
+        public_inputs.extend_from_slice(&self.withdrawal_cred);
+        public_inputs.push(self.amount);
+        public_inputs.extend_from_slice(&self.nullifier);
+        public_inputs.extend_from_slice(&self.merkle_proof.root);
 
         // private inputs
-        res.extend_from_slice(&self.nullifier_preimage);
+        private_inputs.extend_from_slice(&self.nullifier_preimage);
         let merkle_proof: Vec<F> = self.merkle_proof.into();
-        res.extend_from_slice(&merkle_proof);
-        res
+        private_inputs.extend_from_slice(&merkle_proof);
+
+        StakeProofInputs {
+            public_inputs,
+            private_inputs,
+        }
     }
 }
 
@@ -81,8 +91,13 @@ fn main() {
         merkle_proof,
         nullifier,
     };
-    let public_inputs: Vec<F> = stake_proof.into();
-    compile_and_run(lean_pg, (&public_inputs, &[]), false);
+    let inputs: StakeProofInputs = stake_proof.into();
+
+    compile_and_run(
+        lean_pg,
+        (&inputs.public_inputs, &inputs.private_inputs),
+        false,
+    );
 }
 
 #[cfg(test)]
