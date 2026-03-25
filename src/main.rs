@@ -110,7 +110,8 @@ fn main() {
         ),
         false,
     );
-    let whir_config = default_whir_config(1);
+    let rho = 1;
+    let whir_config = default_whir_config(rho);
 
     let time = std::time::Instant::now();
     let proof = prove_execution(
@@ -122,13 +123,22 @@ fn main() {
     );
     let proof_time = time.elapsed();
 
-    println!("Proof generation time: {:.3}s", proof_time.as_secs_f32());
-    println!("{}", proof.metadata.display());
-
     let time = std::time::Instant::now();
-    verify_execution(&bytecode, &stake_proof_inputs.public_inputs, proof.proof).unwrap();
+    verify_execution(
+        &bytecode,
+        &stake_proof_inputs.public_inputs,
+        proof.proof.clone(),
+    )
+    .unwrap();
     let verification_time = time.elapsed();
-    println!("Verification time: {:.3}s", verification_time.as_secs_f32());
+
+    println!(
+        "Rho: {}, proving time: {:.3}s, verification_time: {:.3}s, proof size: {} ",
+        rho,
+        proof_time.as_secs_f32(),
+        verification_time.as_secs_f32(),
+        proof.proof.proof_size_fe(),
+    );
 }
 
 #[cfg(test)]
@@ -157,17 +167,8 @@ pub mod tests {
 
     #[test]
     pub fn test_hash() {
-        let a = [
-            F::new(1214873956),
-            F::new(258084305),
-            F::new(2002146002),
-            F::new(645480002),
-            F::new(499722232),
-            F::new(67463537),
-            F::new(272555026),
-            F::new(342163208),
-        ];
-        let b = a.clone();
+        let a = [F::new(11); 8];
+        let b = [F::new(13); 8];
         let path = format!("{}/py/hash.py", env!("CARGO_MANIFEST_DIR"));
         let lean_pg = &ProgramSource::Filepath(path);
         let a_b = [a, b].concat();
