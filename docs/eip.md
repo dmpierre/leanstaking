@@ -15,13 +15,13 @@ requires: EIP-6110, EIP-7251, EIP-8141
 
 "Lean Staking" is an L1 native, two-phase staking process providing validator unlinkability. It decouples execution layer (EL) deposit addresses from consensus layer (CL) validator keys by routing deposits through a pending deposit tree. Depositors first submit a pending deposit along with a cryptographic commitment to the staking contract. A separate party then claims the deposit by providing a zero-knowledge proof of commitment ownership, at which point the deposit is added to the validator entry queue.
 
-We first describe a simple version of the protocol that requires only EL changes to the staking contract. Then, in section "Two-Sided Plausible Deniability", we describe a slightly more involved version that requires changes to withdrawal mechanism in CL. However, our changes to the validator withdrawal protocol provides a strong in-protocol primitive for private ETH transfers with unique plausible deniability for sender and recipient of the funds. 
+We first describe a simple version of the protocol that requires only EL changes to the staking contract. Then, in section "Two-phase Withdrawals", we describe a slightly more involved version that requires changes to withdrawal mechanism in CL. However, our changes to the validator withdrawal protocol provides a strong in-protocol primitive for private ETH transfers with novel plausible deniability for sender and recipient of the funds. 
 
 Lean Staking can be post-quantum secure provided the underlying proving system is. We provide an implementation using LeanVM, an ongoing Ethereum Foundation project, which is envisioned as a formally verified and post-quantum ready proving system. It uses Poseidon2 over the degree 5 Koala-Bear field. The current draft does not enforce a specific hash function or field, as both are tied to the chosen proving system.
 
 ## Motivation
 
-Privacy is a pressing requirement for Ethereum. L1 staking is Ethereum's economic and security powerhouse. At the time of this EIP, the staking contract locks more than 81 million ETH ($167B). However, the current staking flow is public, linking deposit addresses to validator keys. This lack of privacy compromises solo and institutional stakers alike, sometimes putting their funds and even physical safety at risk.
+Privacy is a pressing requirement for Ethereum. L1 staking is Ethereum's economic and security powerhouse. At the time of this EIP, the staking contract locks more than 38 million ETH ($81B). However, the current staking flow is public, linking deposit addresses to validator keys. This lack of privacy compromises solo and institutional stakers alike, sometimes putting their funds and even physical safety at risk.
 
 With [EIP-6110](https://eips.ethereum.org/EIPS/eip-6110), deposit inclusion and validation shifted to the execution layer. This means Lean Staking can be implemented entirely through changes to the staking contract without any consensus layer modifications. Breaking the link between EL and CL credentials would provide a powerful base layer privacy primitive. Because all validators must use the same two-phase deposit mechanism, Lean Staking also enables private value transfers for users who have no intention of running a validator. Such users can submit a pending deposit and claim it to a different address, thereby using an indistinguishable process from genuine validator deposits. This dual use is what makes the construction powerful: validators get privacy by default, while non-validators can leverage the same anonymity set for private transfers with plausible deniability.
 
@@ -29,11 +29,11 @@ With [EIP-6110](https://eips.ethereum.org/EIPS/eip-6110), deposit inclusion and 
 
 Lean Staking introduces a two-phase staking process:
 
-1. **Pending deposit phase**: The depositor sends ETH along with a cryptographic commitment to the staking contract. The commitment is inserted into a pending deposit tree. This transaction is public but reveals nothing about the future validator identity.
+1. **Pending deposit phase**: The depositor sends ETH along with a cryptographic commitment to the staking contract. The commitment is inserted into a append-only pending deposit tree. This transaction is public but reveals nothing about the future validator identity.
 
-2. **Claim phase**: A separate party (not the original depositor) submits a zero-knowledge proof of knowledge of an unclaimed commitment in the pending deposit tree. Upon successful verification, the deposit is added to the validator entry queue with the provided CL credentials. The commitment is nullified to prevent double-claiming.
+2. **Claim phase**: A separate party (i.e. relayer or AA bundler) submits a zero-knowledge proof of knowledge of an unclaimed commitment in the pending deposit tree. Upon successful verification, the deposit is added to the validator entry queue with the provided CL credentials. The commitment is nullified to prevent double-claiming.
 
-The original depositor should not submit the claim transaction directly, as an observer could link with high probability his pending deposit and claim phases.
+The original depositor should not submit the claim transaction directly, as an observer could link his pending deposit and claim phases.
 
 ### Pending Deposit Tree
 
@@ -43,10 +43,10 @@ The on-chain contract only needs to store the current *frontier* (one hash per t
 
 ### Pending Deposit
 
-To start unlinking with Lean Staking, the depositor must send at least 32 ETH alongside a cryptographic commitment to the staking contract. We update the staking contract to contain a `pendingDeposit` method that inserts the commitment into the pending deposit tree. The pending deposit phase only commits the ETH; it does not associate it with any validator.
+To start unlinking with Lean Staking, the depositor must send at least 32 ETH alongside a cryptographic commitment to the staking contract. We update the staking contract to replace `deposit` method with a `add_pending_deposit` method that inserts the commitment into the pending deposit tree. The pending deposit phase only commits the ETH; it does not associate it with any validator.
 
 ```solidity
-function pendingDeposit(bytes32 commitment) external payable {
+function add_pending_deposit(bytes32 commitment) external payable {
   require(msg.value >= 32 ether);
   bytes32 newRoot = insertLeaf(root, commitment);
   storeRoot(newRoot);
@@ -170,7 +170,7 @@ def main():
 
 ### Claim
 
-A claim transaction consumes a pending deposit commitment and adds the deposit to the validator entry queue. When claiming, users provide a valid zkSNARK proving knowledge of a non-nullified commitment. The contract collects the deposited ETH from the pending deposit tree and records the nullifier to prevent double-claiming. Front-running protection is prevented with a binding commitment to the validator credentials, such that a proof generated for one set of credentials cannot be used with another claim.
+A claim transaction consumes a pending deposit commitment and adds the deposit to the validator entry queue. When claiming, users provide a valid zkSNARK proving knowledge of a non-nullified commitment. The contract records the nullifier to prevent double-claiming. 
 
 ```solidity
 function claim(
@@ -193,7 +193,7 @@ function claim(
 
 The claim transaction introduces a fee dilemma. The original depositor should not submit the claim, as doing so would link the pending deposit and claim phases. A separate, unlinked party must submit it, raising the question of who pays gas.
 
-Both options use native account abstraction (e.g., [EIP-8141](./)) to pay fees from the deposited amount, removing the need for a claiming user to have a funded account.
+Both options use native account abstraction (e.g., [EIP-8141](./)) to pay fees from the deposited amount, removing the need for a claiming user to have an unliked funded account.
 
 **Option A: Free claims.** The claim transaction is gas-exempt — no fee is deducted from the deposit. Informally, the security argument is: each claim requires a valid zero-knowledge proof backed by real ETH locked in the pending deposit tree and the validator entry and withdrawal delays are long enough (on the order of days to weeks) that the staking yield accrued during these periods exceeds the cost of a single transaction. Spam-claiming is therefore economically irrational, since an attacker must lock real ETH per claim and cannot recoup it quickly. 
 
@@ -207,15 +207,15 @@ The pending withdrawal tree has the same structure as the pending deposit tree: 
 
 #### Withdrawal Commitment Credential (type `0x03`)
 
-We introduce a new withdrawal credential type `0x03`. When a validator sets their withdrawal credentials to a `0x03` credential, the remaining 31 bytes encode a withdrawal commitment rather than an address. The withdrawal commitment is defined as:
+We introduce a new withdrawal credential type `0x03`. When a validator sets their withdrawal credentials to a `0x03` credential, the remaining 31 bytes encodes a withdrawal commitment rather than an address. The withdrawal commitment is defined as:
 
-- `withdrawal_commitment = hash(withdrawal_nullifier_preimage | recipient_address)`
+- `withdrawal_commitment = hash(withdrawal_nullifier_preimage | recipient_address)[0:31]`
 
 Where `withdrawal_nullifier_preimage` is a random value chosen by the validator (or the original depositor, in the case of a privacy transfer). When the validator exits, the CL inserts the withdrawal commitment into the pending withdrawal tree instead of sending ETH directly to an address.
 
 This fits naturally into the existing credential type system (`0x00` for BLS, `0x01` for execution address, `0x02` for compounding). A `0x03` credential signals that the validator opts into two-phase withdrawal.
 
-**Pending withdrawal (CL):** When a validator with `0x03` credentials exits, the CL inserts their withdrawal commitment into the pending withdrawal tree. The validator's balance is locked in the tree rather than sent to an address.
+**Pending withdrawal (CL):** When a validator with `0x03` credentials exits, the CL inserts their withdrawal commitment into the pending withdrawal tree. 
 
 **Claim withdrawal (EL):** A party proves knowledge of the `withdrawal_nullifier_preimage` of an unclaimed withdrawal commitment in the pending withdrawal tree and receives the ETH to the `recipient_address` embedded in the commitment. The contract records the withdrawal nullifier (`hash(withdrawal_nullifier_preimage)`) to prevent double-claiming.
 
@@ -233,7 +233,7 @@ This modification is not required for the core deposit-side protocol to function
 
 ### Claim Fee Model
 
-Option A (free claims) maximizes privacy and simplicity. Also, the DoS argument is strengthened by proof generation costs, providing a natural rate limit independent of gas costs. Option B (fixed fee) is more conservative, compensating whoever submits the claim and creating an incentive for third-party claim submission. The fixed fee ensures no linking risk: every claim looks identical regardless of the underlying deposit amount. Users who don't care about privacy can claim their own deposit and keep the fee, making the system strictly better than the status quo for all users.
+Option A (free claims) maximizes privacy and simplicity. Option B (fixed fee) is more conservative, compensating whoever submits the claim and creating an incentive for third-party claim submission. The fixed fee ensures no linking risk: every claim looks identical regardless of the underlying deposit amount. Users who don't care about privacy can claim their own deposit and keep the fee, making the system strictly better than the status quo for all users.
 
 ## Security Considerations
 
@@ -241,19 +241,9 @@ Option A (free claims) maximizes privacy and simplicity. Also, the DoS argument 
 
 An adversary who observes both the pending deposit and claim transactions may attempt to correlate them via timing analysis. Users should wait for a significant number of additional commitments to be added to the pending deposit tree before claiming, to increase the anonymity set. The delay between the pending deposit and claim should be variable and unpredictable.
 
-### Nullifier Set Growth
-
-The staking contract maintains a set of spent nullifiers and rejects any claim with a previously used nullifier. While this prevents double-claiming of pending deposit commitments, this means the nullifier set grows monotonically. Over time this becomes a scalability concern for on-chain storage and lookup costs.
-
-Evolving nullifiers, introduced by Bowe and Miers in ["A Note on Notes: Towards Scalable Anonymous Payments via Evolving Nullifiers and Oblivious Synchronization"](https://eprint.iacr.org/2025/2031) and adopted in the Zcash Tachyon upgrade, offer a solution. The nullifier set is divided into epochs; when an epoch fills or a cap is reached, a fresh set is created. Any nullifier inserted into the new set must be accompanied by a recursive proof that it does not appear in any previous epoch's set. This allows validators to permanently prune old nullifier sets while preserving double-spend protection. Adapting this construction to Lean Staking could bound on-chain nullifier storage and keep claim verification costs constant regardless of how many claims have been processed historically.
-
 ### Root Expiry
 
 The contract stores only the last N roots (e.g., 1024) in a circular buffer. A user's claim whose proof references an evicted root must recompute their proof against a current root. The buffer size should be chosen to give users sufficient time to generate and submit proofs under normal network conditions. Very old roots also correspond to smaller anonymity sets, so expiring them has the secondary benefit of encouraging claims against roots with larger anonymity sets.
-
-### Proof Soundness
-
-The security of Lean Staking depends on the soundness of the underlying proving system. A broken proof system would allow an attacker to claim deposits without valid commitments. The choice of LeanVM and its formal verification effort is motivated by this critical dependency.
 
 ### Claim Front-running
 
@@ -261,29 +251,35 @@ A mempool observer could attempt to front-run a claim transaction by substitutin
 
 ## Extensions and Considerations
 
+### Nullifier Set Growth
+
+The staking contract maintains a set of spent nullifiers and rejects any claim with a previously used nullifier. While this prevents double-claiming of pending deposit commitments, this means the nullifier set grows monotonically. Over time this could become a scalability concern for on-chain storage.
+
+Evolving nullifiers, introduced by Bowe and Miers in ["A Note on Notes: Towards Scalable Anonymous Payments via Evolving Nullifiers and Oblivious Synchronization"](https://eprint.iacr.org/2025/2031) and adopted in the Zcash Tachyon upgrade, offer a solution. The nullifier set is divided into epochs; when an epoch fills or a cap is reached, a fresh set is created. Any nullifier inserted into the new set must be accompanied by a recursive proof that it does not appear in any previous epoch's set. This allows validators to permanently prune old nullifier sets while preserving double-spend protection. Adapting this construction to Lean Staking could bound on-chain nullifier storage and keep claim verification costs constant regardless of how many claims have been processed historically.
+
 ### Fixed Denominations
 
 Although the amount is bound to the commitment, allowing arbitrary deposit amounts is problematic for privacy: all deposits of the same amount effectively form a separate anonymity set. An unusual amount (e.g., 37.5 ETH) may have very few other deposits to hide among, making linking trivial.
 
 To enforce good privacy hygiene, the contract could restrict deposits to a fixed set of denominations (e.g., 32, 64, 128, 256, 512, 1024, 2048 ETH), with a separate pending deposit tree per denomination. Post-Pectra ([EIP-7251](https://eips.ethereum.org/EIPS/eip-7251)), validators may hold effective balances up to 2048 ETH, so supporting only 32 ETH is not practical.
 
-This introduces a tradeoff: more denominations provide flexibility but fragment the anonymity set across multiple trees. Fewer denominations force larger deposits to split across multiple cycles , a 96 ETH deposit would require a 64 ETH and a 32 ETH pending deposit. The optimal denomination set depends on the observed distribution of validator balances and should concentrate most deposits into a small number of well-populated trees.
+This introduces a tradeoff: more denominations provide flexibility but fragment the anonymity set across multiple trees. Fewer denominations force larger deposits to split across multiple cycles(e.g. a 96 ETH deposit would require a 64 ETH and a 32 ETH pending deposit). The optimal denomination set depends on the observed distribution of validator balances and should concentrate most deposits into a small number of well-populated sets.
 
-## Post-quantum Security
+### Proof Soundness and Post-quantum Security
 
-Lean Staking inherits its post-quantum security properties from the underlying proving system. LeanVM leverages Superspartan for its polynomial interactive oracle proof (PIOP). Combined with the hash-based WHIR polynomial commitment scheme (PCS), it removes any reliance on any elliptic-curve based primitive, thereby providing a post-quantum secure proving system. LeanVM is usually instantiated with Poseidon2.
+The security of Lean Staking depends on the soundness of the underlying proving system. A broken proof system would allow an attacker to claim deposits without valid commitments. The choice of LeanVM and its formal verification effort is motivated by this critical dependency.
 
-## Plausibly Deniable Transfers
+### Plausibly Deniable Transfers
 
 Lean Staking offers a plausibly deniable value transfer mechanism as a byproduct. Unlike standalone privacy protocols which may be stigmatized or censored, Lean Staking's privacy is embedded in critical Ethereum infrastructure that all stakers must use.
 
-### Plausible Deniability with Deposit-side Only
+#### Plausible Deniability with Deposit-side Only
 
-With the deposit-side protocol alone, a depositor can set the receiver's address as the `withdrawal_credentials` during the claim phase. An observer sees a standard staking operation indistinguishable from any other validator deposit. The sender has clear plausible deniability, since he can claim to be a legitimate validator.
+With the deposit-side protocol alone, a depositor can set the receiver's address as the `withdrawal_credentials` in their commitment. An observer sees a standard staking operation indistinguishable from any other validator deposit. The sender has clear plausible deniability, since he can claim to be a legitimate validator.
 
 The recipient's situation is more nuanced. Unlike the Wormhole construction ([EIP-7503](https://eips.ethereum.org/EIPS/eip-7503)) where the recipient mints fresh ETH through a privacy-specific mechanism, here the recipient receives funds through a normal validator withdrawal, a public action that all validators use. In principle this gives the recipient some deniability: they can claim they were simply a validator who exited. However, since a privacy-seeking user is unlikely to actually run a validator for an extended period, they would enter the validator set and immediately request exit. This behavior is unusual: legitimate validators typically run for extended periods and an attentive observer could flag short-lived validators as likely privacy transfers, weakening the recipient's deniability in practice.
 
-### Two-sided Plausible Deniability
+#### Two-sided Plausible Deniability
 
 With two-phase withdrawals, both sides of a private transfer are covered:
 
