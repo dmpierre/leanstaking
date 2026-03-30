@@ -110,3 +110,37 @@ pub fn three_levels_merkle_proof() -> MerkleProof {
     };
     return proof;
 }
+
+/// Depth-32 Merkle proof with dummy siblings.
+/// leaf_sibling = [5; 8], auth_path sibling[i] = [i+10; 8], all flags = 0.
+///
+/// To regenerate the root values, feed these same inputs to py/gen_root.py via compile_and_run:
+///   public_inputs = nullifier_preimage([2;8]) | validator_key([7;13]) | withdrawal_cred([3;9])
+///                   | amount(32) | leaf_sibling([5;8]) | leaf_is_right_child(0)
+///                   | for i in 0..32: sibling([i+10;8]) | flag(0)
+///   cargo test gen_root_32 -- --nocapture
+pub fn depth_32_merkle_proof() -> MerkleProof {
+    let mut auth_path = Vec::with_capacity(32);
+    for i in 0u32..32 {
+        auth_path.push([F::new(i + 10); 8]);
+    }
+    let path = MerklePath {
+        auth_path,
+        leaf_sibling: [F::new(5); 8],
+        flags: vec![F::new(0); 32],
+        leaf_is_right_child: F::new(0),
+    };
+    MerkleProof {
+        root: [
+            F::new(319108412),
+            F::new(880625412),
+            F::new(1057779508),
+            F::new(1239166459),
+            F::new(493418555),
+            F::new(1659687608),
+            F::new(898245713),
+            F::new(617354080),
+        ],
+        path,
+    }
+}
