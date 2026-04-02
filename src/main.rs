@@ -1,5 +1,4 @@
 use lean_compiler::ProgramSource;
-use lean_compiler::compile_and_run;
 use lean_compiler::try_compile_program;
 use lean_prover::default_whir_config;
 use lean_prover::prove_execution::prove_execution;
@@ -7,7 +6,7 @@ use lean_prover::verify_execution::verify_execution;
 use lean_vm::*;
 
 pub mod data;
-use crate::data::three_levels_merkle_proof;
+use crate::data::depth_32_merkle_proof;
 
 pub struct MerklePath {
     pub leaf_sibling: [F; 8],
@@ -76,7 +75,7 @@ impl Into<StakeProofInputs> for StakeProof {
 fn main() {
     let path = format!("{}/py/stake.py", env!("CARGO_MANIFEST_DIR"));
     let lean_pg = &ProgramSource::Filepath(path);
-    let merkle_proof = three_levels_merkle_proof();
+    let merkle_proof = depth_32_merkle_proof();
     let nullifier = [
         F::new(1943526546),
         F::new(660031786),
@@ -102,43 +101,40 @@ fn main() {
         private_input: stake_proof_inputs.private_inputs.as_slice(),
         ..ExecutionWitness::empty()
     };
-    compile_and_run(
-        lean_pg,
-        (
+
+    for rho in [1, 2, 4, 8] {
+        let whir_config = default_whir_config(rho);
+
+        let time = std::time::Instant::now();
+        let proof = prove_execution(
+            &bytecode,
             &stake_proof_inputs.public_inputs,
-            &stake_proof_inputs.private_inputs,
-        ),
-        false,
-    );
-    let rho = 1;
-    let whir_config = default_whir_config(rho);
+            &witness,
+            &whir_config,
+            false,
+        );
+        let proof_time = time.elapsed();
 
-    let time = std::time::Instant::now();
-    let proof = prove_execution(
-        &bytecode,
-        &stake_proof_inputs.public_inputs,
-        &witness,
-        &whir_config,
-        false,
-    );
-    let proof_time = time.elapsed();
+        let time = std::time::Instant::now();
+        verify_execution(
+            &bytecode,
+            &stake_proof_inputs.public_inputs,
+            proof.proof.clone(),
+        )
+        .unwrap();
+        let verification_time = time.elapsed();
 
-    let time = std::time::Instant::now();
-    verify_execution(
-        &bytecode,
-        &stake_proof_inputs.public_inputs,
-        proof.proof.clone(),
-    )
-    .unwrap();
-    let verification_time = time.elapsed();
+        println!("{}", proof.metadata.display());
 
-    println!(
-        "Rho: {}, proving time: {:.3}s, verification_time: {:.3}s, proof size: {} ",
-        rho,
-        proof_time.as_secs_f32(),
-        verification_time.as_secs_f32(),
-        proof.proof.proof_size_fe(),
-    );
+        println!(
+            "Rho: {}, proving time: {:.3}s, verification_time: {:.3}s, proof size: {} (~{} KB)",
+            rho,
+            proof_time.as_secs_f32(),
+            verification_time.as_secs_f32(),
+            proof.proof.proof_size_fe(),
+            proof.proof.proof_size_fe() * 31 / 8 / 1024
+        );
+    }
 }
 
 #[cfg(test)]
@@ -173,5 +169,41 @@ pub mod tests {
         let lean_pg = &ProgramSource::Filepath(path);
         let a_b = [a, b].concat();
         compile_and_run(lean_pg, (&a_b, &[]), false);
+    }
+
+    #[test]
+    pub fn gen_root_32() {
+        let path = format!("{}/py/gen_root.py", env!("CARGO_MANIFEST_DIR"));
+        let lean_pg = &ProgramSource::Filepath(path);
+
+        // Same inputs as main(): nullifier_preimage=2, validator_key=7, withdrawal_cred=3, amount=32
+        let nullifier_preimage = [F::new(2); 8];
+        let validator_key = [F::new(7); 13];
+        let withdrawal_cred = [F::new(3); 9];
+        let amount = [F::new(32)];
+
+        // leaf_sibling and leaf_is_right_child
+        let leaf_sibling = [F::new(5); 8];
+        let leaf_is_right_child = [F::new(0)];
+
+        // 32 levels: each has sibling(8) + flag(1)
+        let mut level_data: Vec<F> = Vec::new();
+        for i in 0u32..32 {
+            level_data.extend_from_slice(&[F::new(i + 10); 8]); // sibling
+            level_data.push(F::new(0)); // flag (always left child)
+        }
+
+        let inputs = [
+            nullifier_preimage.as_slice(),
+            validator_key.as_slice(),
+            withdrawal_cred.as_slice(),
+            amount.as_slice(),
+            leaf_sibling.as_slice(),
+            leaf_is_right_child.as_slice(),
+            level_data.as_slice(),
+        ]
+        .concat();
+
+        compile_and_run(lean_pg, (&inputs, &[]), false);
     }
 }

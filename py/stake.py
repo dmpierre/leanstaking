@@ -16,7 +16,7 @@ NONRESERVED_PROGRAM_PRIVATE_INPUT_START = 128
 
 
 def main():
-    levels = 2
+    levels = 32
 
     # public inputs
     validator_key = NONRESERVED_PROGRAM_INPUT_START
