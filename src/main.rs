@@ -104,35 +104,40 @@ fn main() {
 
     for rho in [1, 2, 4, 8] {
         let whir_config = default_whir_config(rho);
+        let mut total_proof_time = std::time::Duration::ZERO;
+        let mut total_verification_time = std::time::Duration::ZERO;
+        let mut proof_size_fe = 0;
 
-        let time = std::time::Instant::now();
-        let proof = prove_execution(
-            &bytecode,
-            &stake_proof_inputs.public_inputs,
-            &witness,
-            &whir_config,
-            false,
-        );
-        let proof_time = time.elapsed();
+        for _ in 0..100 {
+            let time = std::time::Instant::now();
+            let proof = prove_execution(
+                &bytecode,
+                &stake_proof_inputs.public_inputs,
+                &witness,
+                &whir_config,
+                false,
+            );
+            total_proof_time += time.elapsed();
 
-        let time = std::time::Instant::now();
-        verify_execution(
-            &bytecode,
-            &stake_proof_inputs.public_inputs,
-            proof.proof.clone(),
-        )
-        .unwrap();
-        let verification_time = time.elapsed();
+            let time = std::time::Instant::now();
+            verify_execution(
+                &bytecode,
+                &stake_proof_inputs.public_inputs,
+                proof.proof.clone(),
+            )
+            .unwrap();
+            total_verification_time += time.elapsed();
 
-        println!("{}", proof.metadata.display());
+            proof_size_fe = proof.proof.proof_size_fe();
+        }
 
         println!(
-            "Rho: {}, proving time: {:.3}s, verification_time: {:.3}s, proof size: {} (~{} KB)",
+            "Rho: {}, avg proving time: {:.3}s, avg verification time: {:.3}s, proof size: {} (~{} KB)",
             rho,
-            proof_time.as_secs_f32(),
-            verification_time.as_secs_f32(),
-            proof.proof.proof_size_fe(),
-            proof.proof.proof_size_fe() * 31 / 8 / 1024
+            total_proof_time.as_secs_f32() / 100.0,
+            total_verification_time.as_secs_f32() / 100.0,
+            proof_size_fe,
+            proof_size_fe * 31 / 8 / 1024
         );
     }
 }

@@ -143,7 +143,7 @@ NULLIFIER_PREIMAGE_SIZE = 8
 NONRESERVED_PROGRAM_PRIVATE_INPUT_START = 128
 
 def main():
-    levels = 128
+    levels = 32
 
     # public inputs
     validator_key = NONRESERVED_PROGRAM_INPUT_START
@@ -198,6 +198,16 @@ Both options use native account abstraction (e.g., [EIP-8141](./)) to pay fees f
 **Option A: Free claims.** The claim transaction is gas-exempt — no fee is deducted from the deposit. Informally, the security argument is: each claim requires a valid zero-knowledge proof backed by real ETH locked in the pending deposit tree and the validator entry and withdrawal delays are long enough (on the order of days to weeks) that the staking yield accrued during these periods exceeds the cost of a single transaction. Spam-claiming is therefore economically irrational, since an attacker must lock real ETH per claim and cannot recoup it quickly. 
 
 **Option B: Fixed fee.** A fixed fee (e.g., 0.001 ETH) is deducted from every claim and paid to whoever submits the claim transaction (bundler, block builder, etc.). The fee is the same for all claims regardless of actual gas cost, so it cannot be used to fingerprint or link specific pending deposits to claims. The pending deposit amount must be at least 32 ETH plus the fixed fee (e.g., 32.001 ETH). Users who don't need privacy can simply claim their own deposit and collect the fee themselves. 
+
+### Benchmarks
+
+We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [9972d3](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro.
+
+| Rho | Proving Time | Verification Time | Proof Size |
+|---|---|---|---|
+| 1 | 0.063s | 0.017s | ~193KB |
+| 2  | 0.048s  | 0.011s | ~123KB |
+| 4  | 0.054s  | 0.007s | ~83KB |
 
 ### Two-phase Withdrawals
 
