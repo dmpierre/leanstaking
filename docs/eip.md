@@ -191,7 +191,7 @@ function claim(
 
 ### Benchmarks
 
-We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [9972d3](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro (N = 500).
+We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [a7e180](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro (N = 500).
 
 | Rho | Proving Time | Verification Time | Proof Size |
 |---|---|---|---|
