@@ -189,16 +189,6 @@ function claim(
 }
 ```
 
-#### Claim Transaction Fees
-
-The claim transaction introduces a fee dilemma. The original depositor should not submit the claim, as doing so would link the pending deposit and claim phases. A separate, unlinked party must submit it, raising the question of who pays gas.
-
-Both options use native account abstraction (e.g., [EIP-8141](./)) to pay fees from the deposited amount, removing the need for a claiming user to have an unliked funded account.
-
-**Option A: Free claims.** The claim transaction is gas-exempt — no fee is deducted from the deposit. Informally, the security argument is: each claim requires a valid zero-knowledge proof backed by real ETH locked in the pending deposit tree and the validator entry and withdrawal delays are long enough (on the order of days to weeks) that the staking yield accrued during these periods exceeds the cost of a single transaction. Spam-claiming is therefore economically irrational, since an attacker must lock real ETH per claim and cannot recoup it quickly. 
-
-**Option B: Fixed fee.** A fixed fee (e.g., 0.001 ETH) is deducted from every claim and paid to whoever submits the claim transaction (bundler, block builder, etc.). The fee is the same for all claims regardless of actual gas cost, so it cannot be used to fingerprint or link specific pending deposits to claims. The pending deposit amount must be at least 32 ETH plus the fixed fee (e.g., 32.001 ETH). Users who don't need privacy can simply claim their own deposit and collect the fee themselves. 
-
 ### Benchmarks
 
 We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [9972d3](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro (N = 500).
@@ -241,10 +231,6 @@ This means a privacy user's flow is: (1) submit a pending deposit with commitmen
 This modification is not required for the core deposit-side protocol to function. Without it, a user can still achieve privacy by entering the validator set and subsequently requesting exit, at the cost of waiting through the entry and exit queues.
 
 ## Rationale
-
-### Claim Fee Model
-
-Option A (free claims) maximizes privacy and simplicity. Option B (fixed fee) is more conservative, compensating whoever submits the claim and creating an incentive for third-party claim submission. The fixed fee ensures no linking risk: every claim looks identical regardless of the underlying deposit amount. Users who don't care about privacy can claim their own deposit and keep the fee, making the system strictly better than the status quo for all users.
 
 ## Security Considerations
 
