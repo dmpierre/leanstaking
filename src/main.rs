@@ -72,6 +72,8 @@ impl Into<StakeProofInputs> for StakeProof {
     }
 }
 
+const N_SAMPLES: u16 = 500;
+
 fn main() {
     let path = format!("{}/py/stake.py", env!("CARGO_MANIFEST_DIR"));
     let lean_pg = &ProgramSource::Filepath(path);
@@ -102,13 +104,13 @@ fn main() {
         ..ExecutionWitness::empty()
     };
 
-    for rho in [1, 2, 4, 8] {
+    for rho in [1, 2, 3, 4] {
         let whir_config = default_whir_config(rho);
         let mut total_proof_time = std::time::Duration::ZERO;
         let mut total_verification_time = std::time::Duration::ZERO;
         let mut proof_size_fe = 0;
 
-        for _ in 0..100 {
+        for _ in 0..N_SAMPLES {
             let time = std::time::Instant::now();
             let proof = prove_execution(
                 &bytecode,
@@ -131,11 +133,12 @@ fn main() {
             proof_size_fe = proof.proof.proof_size_fe();
         }
 
+        let div: f32 = N_SAMPLES.into();
         println!(
             "Rho: {}, avg proving time: {:.3}s, avg verification time: {:.3}s, proof size: {} (~{} KB)",
             rho,
-            total_proof_time.as_secs_f32() / 100.0,
-            total_verification_time.as_secs_f32() / 100.0,
+            total_proof_time.as_secs_f32() / div,
+            total_verification_time.as_secs_f32() / div,
             proof_size_fe,
             proof_size_fe * 31 / 8 / 1024
         );

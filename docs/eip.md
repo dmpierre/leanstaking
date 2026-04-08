@@ -201,13 +201,14 @@ Both options use native account abstraction (e.g., [EIP-8141](./)) to pay fees f
 
 ### Benchmarks
 
-We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [9972d3](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro.
+We run preliminary benchmarks using LeanVM for different $\rho$ values. We assume a deposit commitment tree of depth 32, a depth that should accomodate all validator entries for a sizeable amount of time. We report average proving time, proof sizes and verification times for generating claim proofs using commit [9972d3](https://github.com/leanEthereum/leanMultisig) on a Macbook M1 Pro (N = 500).
 
 | Rho | Proving Time | Verification Time | Proof Size |
 |---|---|---|---|
-| 1 | 0.063s | 0.017s | ~193KB |
-| 2  | 0.048s  | 0.011s | ~123KB |
-| 4  | 0.054s  | 0.007s | ~83KB |
+| 1 | 0.035s | 0.012s | ~189KB |
+| 2  | 0.032s  | 0.008s | ~124KB |
+| 3  | 0.035s  | 0.006s | ~99KB |
+| 4  | 0.041s  | 0.005s | ~83KB |
 
 ### Two-phase Withdrawals
 
